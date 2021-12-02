@@ -3,6 +3,8 @@ BEGIN TRANSACTION;
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100),
+    pet VARCHAR(100),
+    age INT,
     email TEXT UNIQUE NOT NULL,
     entries BIGINT DEFAULT 0,
     joined TIMESTAMP NOT NULL
