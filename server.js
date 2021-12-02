@@ -5,11 +5,18 @@ const bcrypt = require("bcrypt-nodejs");
 const cors = require("cors");
 const knex = require("knex");
 const morgan = require("morgan");
+const redis = require("redis");
+const redisClient = redis.createClient(process.env.REDIS_URI);
+
+module.exports = {
+  redisClient,
+};
 
 const register = require("./controllers/register");
 const signin = require("./controllers/signin");
 const profile = require("./controllers/profile");
 const image = require("./controllers/image");
+const auth = require("./middleware/authorization");
 
 const db = knex({
   // connect to your own database here:
@@ -19,27 +26,38 @@ const db = knex({
 
 const app = express();
 
+// const whitelist = ["http://localhost:3001"];
+// const corsOptions = {
+//   origin: function (origin, callback) {
+//     if (whitelist.indexOf(origin) !== -1) {
+//       callback(null, true);
+//     } else {
+//       callback(new Error("Not allowed by CORS"));
+//     }
+//   },
+// };
+
 app.use(morgan("combined"));
 app.use(cors());
 app.use(express.json()); // latest version of exressJS now comes with Body-Parser!
 
-app.get("/", (req, res) => {
-  res.send(db.users);
-});
+// app.get("/", (req, res) => {
+//   res.send(db.users);
+// });
 app.post("/signin", signin.signinAuthentication(db, bcrypt));
 app.post("/register", (req, res) => {
   register.handleRegister(req, res, db, bcrypt);
 });
-app.get("/profile/:id", (req, res) => {
+app.get("/profile/:id", auth.requireAuth, (req, res) => {
   profile.handleProfileGet(req, res, db);
 });
-app.post("profile/:id", (req, res) => {
+app.post("/profile/:id", auth.requireAuth, (req, res) => {
   profile.handleProfileUpdate(req, res, db);
 });
-app.put("/image", (req, res) => {
+app.put("/image", auth.requireAuth, (req, res) => {
   image.handleImage(req, res, db);
 });
-app.post("/imageurl", (req, res) => {
+app.post("/imageurl", auth.requireAuth, (req, res) => {
   image.handleApiCall(req, res);
 });
 
